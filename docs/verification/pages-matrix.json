@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-19",
+  "method": "interactive native application on macOS 27, Apple Pages Creator Studio",
+  "passed": 16,
+  "failed": 0,
+  "source_preserved": true,
+  "routes": [
+    {
+      "route": "docx \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "epub \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "md \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "pdf \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "txt \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "textclipping \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "rtf \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "rtfd \u2192 pages",
+      "status": "passed",
+      "verification": "native application batch; valid Pages ZIP and IWA indexes"
+    },
+    {
+      "route": "pages \u2192 docx",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 pdf",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 txt",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 md",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 html",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 epub",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 png",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    },
+    {
+      "route": "pages \u2192 jpg",
+      "status": "passed",
+      "verification": "native application; independently parsed output"
+    }
+  ]
+}

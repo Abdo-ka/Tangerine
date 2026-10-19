@@ -1,0 +1,75 @@
+name: Draft macOS installer
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing preview tag to build
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.release_tag || github.ref }}
+  package:
+    needs: verify
+    runs-on: macos-14
+    timeout-minutes: 45
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install conversion dependencies
+        run: |
+          brew fetch --retry --cask libreoffice
+          scripts/bootstrap.sh --with-office
+      - name: Build app and disk image
+        id: build
+        run: |
+          scripts/build-app.sh
+          scripts/build-dmg.sh "${RELEASE_TAG#v}"
+      - name: Verify frozen worker and record requirements
+        run: |
+          .venv/bin/python scripts/verify-bundle.py dist/Tangerine.app
+          MINIMUM=$(/usr/libexec/PlistBuddy -c 'Print LSMinimumSystemVersion' dist/Tangerine.app/Contents/Info.plist)
+          ARCH=$(lipo -archs dist/Tangerine.app/Contents/MacOS/Tangerine)
+          cat > "dist/Verification-${GITHUB_RUN_ID}.txt" <<EOF
+          Contributor preview: ${RELEASE_TAG}. Requires macOS ${MINIMUM} or later; architecture: ${ARCH}.
+          Native fixtures, engine fixtures and 259-route matrix passed. Sixteen Pages routes require manual verification.
+          Packaged worker fixtures passed. Installer is Tangerine-Studio.dmg; drag the app into Applications inside the wheel.
+          Ad-hoc signed and NOT Apple-notarized. Gatekeeper may block launch.
+          Maintainer draft pending dependency-source audit and manual clean-Mac checks.
+          https://github.com/Abdo-ka/Tangerine/blob/main/docs/RELEASING.md
+          EOF
+          du -h -d 2 dist/Tangerine.app/Contents/Resources
+      - name: Save installer and checksums
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: macOS-installer
+          path: |
+            dist/*.dmg
+            dist/*.sha256
+            dist/Verification-*.txt
+      - name: Create maintainer draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft > .build/release-draft-status 2>/dev/null; then
+            [[ "$(cat .build/release-draft-status)" == true ]] || { echo 'Refusing to modify a published release'; exit 1; }
+            gh release upload "$RELEASE_TAG" dist/*.dmg dist/*.sha256 dist/Verification-*.txt
+          else
+            gh release create "$RELEASE_TAG" dist/*.dmg dist/*.sha256 dist/Verification-*.txt --verify-tag --draft --prerelease --notes-file "dist/Verification-${GITHUB_RUN_ID}.txt" --title "Tangerine Studio $RELEASE_TAG — contributor preview"
+          fi

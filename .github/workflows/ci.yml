@@ -1,0 +1,80 @@
+name: macOS checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native:
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install worker dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+      - name: Native fixtures including Vision
+        run: swift test
+  verify:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install local conversion dependencies
+        run: |
+          brew install ffmpeg
+          brew fetch --retry --cask libreoffice
+          brew install --cask libreoffice
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+      - name: Build native app
+        run: swift build
+      - name: Conversion and safety integration tests
+        if: ${{ !cancelled() }}
+        run: .venv/bin/python -m unittest discover -s Tests/Python -v
+      - name: Full reference format matrix
+        if: ${{ !cancelled() }}
+        run: .venv/bin/python scripts/matrix_smoke.py
+      - name: Upload generated matrix report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: format-matrix
+          path: .build/matrix-report.json
+          if-no-files-found: ignore
+      - name: Python style checks
+        if: ${{ !cancelled() }}
+        run: |
+          .venv/bin/ruff check Resources scripts Tests/Python
+          .venv/bin/ruff format --check Resources scripts Tests/Python
+      - name: Syntax and package checks
+        if: ${{ !cancelled() }}
+        run: |
+          .venv/bin/python -m compileall -q Resources scripts Tests
+          .venv/bin/python -m pip check
+          plutil -lint Resources/Info.plist
+          bash -n scripts/bootstrap.sh scripts/build-app.sh scripts/build-dmg.sh
