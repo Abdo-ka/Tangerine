@@ -6,6 +6,8 @@ import SwiftUI
   private var monitor: Any?
   private var localMonitor: Any?
   private var timer: Timer?
+  private var activationObserver: NSObjectProtocol?
+  private var shortcutGate = WheelShortcutGate()
   private var panel: NSPanel?
   private var wheel: WheelView?
   private var lastChange = -1
@@ -15,19 +17,53 @@ import SwiftUI
   init(model: AppModel) {
     self.model = model
     lastChange = NSPasteboard(name: .drag).changeCount
-    monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-      Task { @MainActor in self?.flags(event.modifierFlags) }
+    monitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged, .keyDown]) {
+      [weak self] event in
+      Task { @MainActor in self?.handle(event) }
     }
-    localMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-      self?.flags(event.modifierFlags)
+    localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown]) {
+      [weak self] event in
+      self?.handle(event)
       return event
+    }
+    activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+      forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+    ) { [weak self] _ in
+      Task { @MainActor in
+        guard let self, NSEvent.pressedMouseButtons & 1 != 0,
+          NSEvent.modifierFlags.contains(.command)
+        else { return }
+        // The system app switcher can consume Tab before global event monitors see it.
+        self.shortcutGate.suppress()
+        self.dismissWheel()
+      }
     }
     timer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [weak self] _ in
       guard let self else { return }
       Task { @MainActor in self.tick() }
     }
   }
+  private func handle(_ event: NSEvent) {
+    if event.type == .keyDown, event.keyCode == 48, event.modifierFlags.contains(.command) {
+      shortcutGate.suppress()
+      dismissWheel()
+    }
+    flags(event.modifierFlags)
+  }
+  private func dismissWheel() {
+    panel?.orderOut(nil)
+    activeMode = ""
+    activeURLs = []
+  }
   private func flags(_ flags: NSEvent.ModifierFlags) {
+    let suppress = shortcutGate.update(
+      mouseDown: NSEvent.pressedMouseButtons & 1 != 0,
+      commandDown: flags.contains(.command),
+      tabDown: CGEventSource.keyState(.combinedSessionState, key: 48))
+    if suppress {
+      dismissWheel()
+      return
+    }
     guard model?.globalWheelEnabled == true, NSEvent.pressedMouseButtons & 1 != 0 else { return }
     guard let model else { return }
     let keys: [String: NSEvent.ModifierFlags] = [
@@ -54,11 +90,10 @@ import SwiftUI
       // AppKit still tracks the actual drag at native event frequency in WheelView.
       flags(NSEvent.modifierFlags)
     } else {
+      shortcutGate.reset()
       lastChange = NSPasteboard(name: .drag).changeCount
       if panel?.isVisible == true, Date().timeIntervalSince(shownAt) > 0.15 {
-        panel?.orderOut(nil)
-        activeMode = ""
-        activeURLs = []
+        dismissWheel()
       }
     }
   }
@@ -102,7 +137,7 @@ import SwiftUI
     view.hint =
       "\(model?.keySymbol(model?.convertWheelKey ?? "shift") ?? "⇧") Formats\n\(model?.keySymbol(model?.toolsWheelKey ?? "command") ?? "⌘") Tools · \(model?.keySymbol(model?.actionsWheelKey ?? "control") ?? "⌃") Actions"
     view.chosen = { [weak self] id, dropped in
-      guard let self, let model = self.model else { return }
+      guard let self, let model = self.model, !self.shortcutGate.isSuppressed else { return }
       self.panel?.orderOut(nil)
       let actual = dropped.isEmpty ? urls : dropped
       if mode == "convert" {
@@ -130,6 +165,21 @@ import SwiftUI
       panel?.orderFrontRegardless()
       shownAt = Date()
     }
+  }
+}
+
+// Keep a Command-Tab gesture suppressed after Tab is released while Command stays held.
+struct WheelShortcutGate {
+  private(set) var isSuppressed = false
+  mutating func suppress() { isSuppressed = true }
+  mutating func reset() { isSuppressed = false }
+  mutating func update(mouseDown: Bool, commandDown: Bool, tabDown: Bool) -> Bool {
+    guard mouseDown, commandDown else {
+      reset()
+      return false
+    }
+    if tabDown { suppress() }
+    return isSuppressed
   }
 }
 

@@ -15,6 +15,12 @@ This is an independent implementation inspired by the workflow at
 [tangerineformac.com](https://tangerineformac.com). It is not affiliated with that
 product. No proprietary source code, artwork or binaries from it are included.
 
+## Tools wheel
+
+![Animated tools wheel showing compression, crop, resize and background tools](docs/assets/Tangerine-Tools-Wheel.gif)
+
+An 8-second animated walkthrough. [Download GIF](https://github.com/Abdo-ka/Tangerine/releases/download/v0.1.0-preview.6/Tangerine-Tools-Wheel.gif).
+
 ## What you can do
 
 - Convert images, audio, video, PDFs, documents, slides, spreadsheets, EPUBs,
@@ -31,14 +37,14 @@ product. No proprietary source code, artwork or binaries from it are included.
 
 ## Downloads
 
-Installers are tracked on [GitHub Releases](https://github.com/Abdo-ka/Tangerine/releases).
-The installer is named **Tangerine-Studio.dmg**. Open it and drag Tangerine from
-the left into the Applications shortcut inside the wheel. Eject the disk, then
-open Tangerine from Applications. Licenses remain inside the app bundle.
-A draft is a maintainer artifact until the signing, dependency-source audit and
-clean-machine checks in the release checklist are complete. The current local
-preview is **Apple silicon, macOS 26+**, ad-hoc signed and not notarized. Intel
-and older macOS releases are not supported by that binary.
+Download **[Tangerine-Studio.dmg](https://github.com/Abdo-ka/Tangerine/releases/latest)** from GitHub Releases.
+Open it and drag Tangerine into the Applications shortcut inside the wheel.
+Licenses remain inside the app bundle.
+
+The published installer requires **Apple silicon and macOS 14 or later**. It is
+ad-hoc signed and not notarized; Gatekeeper may block launch. The dependency-source
+audit and clean-machine checks remain incomplete. See the [release checklist](docs/RELEASING.md).
+No Intel installer is provided.
 
 ## Requirements
 

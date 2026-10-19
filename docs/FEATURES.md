@@ -91,3 +91,8 @@ and archive traversal tests verify failure does not publish output.
 Pages conversion, global drag behavior, AirDrop, clipboard paste, Terminal,
 window behavior, accessibility and OS permission flows also need explicit manual
 validation. A passing suite is a contributor-preview gate, not a perfection claim.
+
+Command-Tab while dragging dismisses the wheel and suppresses it until Command is
+released or the drag ends. Command alone still opens the tools wheel. Shortcut
+state transitions have regression tests; macOS app-switcher interaction requires
+manual verification.

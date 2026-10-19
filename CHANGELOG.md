@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Keep the drag wheel hidden during Command-Tab app switching; retain normal Command tool activation.
+- Add a short animated tools-wheel demo.
+
 ## 0.1.0-preview.6 — 2026-10-19 (contributor preview)
 
 - Native, offline workspace with 28 tools, 275 conversion routes and six file actions.
