@@ -29,11 +29,9 @@ import SwiftUI
     activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
       forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
     ) { [weak self] _ in
-      Task { @MainActor in
-        guard let self, NSEvent.pressedMouseButtons & 1 != 0,
-          NSEvent.modifierFlags.contains(.command)
-        else { return }
-        // The system app switcher can consume Tab before global event monitors see it.
+      Task { @MainActor [weak self] in
+        guard let self, NSEvent.pressedMouseButtons & 1 != 0 else { return }
+        // The switcher may consume Tab, and Command can be released before activation arrives.
         self.shortcutGate.suppress()
         self.dismissWheel()
       }

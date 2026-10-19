@@ -6,7 +6,7 @@ A native macOS workspace for converting and working with files, entirely offline
 Built with SwiftUI, AppKit, Apple Vision, FFmpeg, LibreOffice and a local Python
 conversion engine.
 
-**Status: early contributor preview (0.1.0).** The app builds and has real conversion
+**Status: early contributor release (0.1.1).** The app builds and has real conversion
 implementations and integration tests. It is not yet a certified feature-for-feature
 replacement for the commercial app. See [capabilities and limits](docs/FEATURES.md)
 and the [release checklist](docs/RELEASING.md).
@@ -18,8 +18,6 @@ product. No proprietary source code, artwork or binaries from it are included.
 ## Tools wheel
 
 ![Animated tools wheel showing compression, crop, resize and background tools](docs/assets/Tangerine-Tools-Wheel.gif)
-
-An 8-second animated walkthrough. [Download GIF](https://github.com/Abdo-ka/Tangerine/releases/download/v0.1.0-preview.6/Tangerine-Tools-Wheel.gif).
 
 ## What you can do
 
